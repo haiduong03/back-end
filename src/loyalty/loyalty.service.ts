@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import axios from "axios";
+import { SaleRepository } from "src/database/repository/dsmart90/sale.repo";
 import { LoyaltyCouponDto, LoyaltyCouponResponse } from "./dto/coupon.dto";
 import { GetDetailLoyaltyResponse } from './dto/getInfo.dto';
-import { OAuthTokenLoyaltyRequest, OAuthTokenLoyaltyResponse, } from "./dto/token.dto";
 import { ReturnBalanceDto, ReturnBalanceResponse } from "./dto/return.dto";
-import { Cron } from "@nestjs/schedule";
+import { OAuthTokenLoyaltyRequest, OAuthTokenLoyaltyResponse, } from "./dto/token.dto";
 
 @Injectable()
 export class LoyaltyService {
+    constructor(
+        private saleRepository: SaleRepository,
+    ) { }
+
     private headerLoyalty = {
         '__tenant': '74de91d3-f389-2c57-79f7-3a16bba8a4d7',
         '__merchant': '74de91d3-f389-2c57-79f7-3a16bba81234'
@@ -20,7 +24,7 @@ export class LoyaltyService {
 
     // @Cron('* * * * * *')
     async handleRetryLoyalty() {
-        console.log(213);
+
     }
 
     async RequestAccessToken(data: OAuthTokenLoyaltyRequest): Promise<OAuthTokenLoyaltyResponse | undefined> {
