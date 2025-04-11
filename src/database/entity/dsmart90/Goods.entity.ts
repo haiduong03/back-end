@@ -1,4 +1,6 @@
-import { Entity, PrimaryColumn, Column } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToOne, PrimaryColumn } from "typeorm";
+import { STrSaleDtl } from "./STrSaleDtl.entity";
+import { GoodsGrp } from "./GoodsGrp.entity";
 
 @Entity("Goods")
 export class Goods {
@@ -142,4 +144,11 @@ export class Goods {
 
     @Column({ type: "datetime", nullable: true })
     DueSaleDate: Date;
+
+    @ManyToMany(() => STrSaleDtl, (sale: STrSaleDtl) => sale.goods)
+    sale: STrSaleDtl;
+
+    @OneToOne(() => GoodsGrp, (groups: GoodsGrp) => groups.good)
+    @JoinColumn({ name: "Goods_Grp_ID", referencedColumnName: "GGrp_ID" })
+    group: GoodsGrp;
 }

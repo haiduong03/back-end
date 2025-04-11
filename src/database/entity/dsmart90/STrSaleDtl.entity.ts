@@ -1,4 +1,6 @@
-import { Entity, PrimaryColumn, Column } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryColumn } from "typeorm";
+import { Goods } from "./Goods.entity";
+import { STrHdr } from "./STrHdr.entity";
 
 @Entity("STr_SaleDtl")
 export class STrSaleDtl {
@@ -79,4 +81,12 @@ export class STrSaleDtl {
 
     @Column({ type: "int", default: 0, nullable: true })
     PProg_ID: number;
+
+    @ManyToOne(() => STrHdr, (hdr: STrHdr) => hdr.sale)
+    @JoinColumn({ name: "Trans_No", referencedColumnName: "Trans_No" })
+    hdr: STrHdr;
+
+    @OneToOne(() => Goods, (goods: Goods) => goods.sale)
+    @JoinColumn({ name: "Goods_ID", referencedColumnName: "Goods_ID" })
+    goods: Goods;
 }

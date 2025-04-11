@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { STrSaleDtl } from "src/database/entity/dsmart90/STr_SaleDtl.entity";
+import { STrSaleDtl } from "@entities/dsmart90/STrSaleDtl.entity";
 import { DataSource, Repository } from "typeorm";
 
 @Injectable()

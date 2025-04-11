@@ -1,4 +1,5 @@
-import { Entity, PrimaryColumn, Column } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
+import { STrHdr } from "./STrHdr.entity";
 
 @Entity("STr_Payment")
 export class STrPayment {
@@ -46,4 +47,8 @@ export class STrPayment {
 
     @Column({ type: "nvarchar", length: 30, default: "" })
     PayRef_No: string;
+
+    @OneToOne(() => STrHdr, (hdr: STrHdr) => hdr.payment)
+    @JoinColumn({ name: "Trans_No", referencedColumnName: "Trans_No" })
+    hdr: STrHdr;
 }

@@ -1,4 +1,5 @@
-import { Entity, PrimaryColumn, Column } from "typeorm";
+import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Goods } from "./Goods.entity";
 
 @Entity("GoodsGrp")
 export class GoodsGrp {
@@ -46,4 +47,9 @@ export class GoodsGrp {
 
     @Column({ type: "bit", default: false })
     Disabled: boolean;
+
+    @OneToOne(() => Goods, (Good: Goods) => Good.group)
+    @JoinColumn({ name: "GGrp_ID", referencedColumnName: "Goods_Grp_ID" })
+    good: Goods;
 }
+    
