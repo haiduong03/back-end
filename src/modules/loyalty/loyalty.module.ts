@@ -1,13 +1,15 @@
 import { Logger, Module } from '@nestjs/common';
+import { ConfigModule } from "@nestjs/config";
 import { HdrRepository } from "@repository/dsmart90/hdr.repo";
 import { LoyaltyService } from './loyalty.service';
-import { ConfigModule } from "@nestjs/config";
-import { CacheModule } from "@nestjs/cache-manager";
+import { RedisCacheModule } from "../redis-cache/redis-cache.module";
+import { ScheduleModule } from "@nestjs/schedule";
 
 @Module({
   imports: [
     ConfigModule,
-    CacheModule
+    ScheduleModule,
+    RedisCacheModule,
   ],
   controllers: [],
   providers: [

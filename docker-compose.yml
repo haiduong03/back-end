@@ -22,7 +22,13 @@ services:
       - '6379:6379'
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes
+    command:
+      - redis-server
+      - --appendonly yes
+      - --appendfsync everysec
+      - --save 900 1
+      - --save 300 10
+      - --save 60 10000
 
 volumes:
   redis-data:

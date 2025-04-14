@@ -1,19 +1,17 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from "@nestjs/schedule";
 import { HdrRepository } from "@repository/dsmart90/hdr.repo";
 import axios, { AxiosError, AxiosInstance } from "axios";
-import { Cache } from "cache-manager";
 import dayjs from "dayjs";
 import { writeLog } from "src/common/utils/function.utils";
+import { RedisCacheService } from "../redis-cache/redis-cache.service";
 import { LoyaltyCouponDto, LoyaltyCouponResponse } from "./dto/coupon.dto";
 import { GetDetailLoyaltyResponse } from './dto/getInfo.dto';
 import { ReturnBalanceDto, ReturnBalanceResponse } from "./dto/return.dto";
 import { OAuthTokenLoyaltyRequest, OAuthTokenLoyaltyResponse, } from "./dto/token.dto";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
 
 @Injectable()
-
 export class LoyaltyService {
     private _axiosInstance: AxiosInstance;
 
@@ -21,8 +19,7 @@ export class LoyaltyService {
         private readonly HdrRepository: HdrRepository,
         private readonly logger: Logger,
         private readonly configService: ConfigService,
-        @Inject(CACHE_MANAGER) 
-        private readonly cache: Cache
+        private readonly cache: RedisCacheService
     ) {
         this._axiosInstance = axios.create({
             baseURL: this.configService.get<string>('TLS_v2_UAT')!,
@@ -48,21 +45,9 @@ export class LoyaltyService {
             const endDate = dayjs().set('dates', 9).set('hour', 9).set('minute', 0).set('second', 0).toDate();
 
             const listPaymentFailed = await this.HdrRepository.getAllPaymentFailedByTime({ startDate, endDate });
-            if (!listPaymentFailed.length) return;
+            // if (!listPaymentFailed.length) return;
 
-            let access_token = await this.cache.get('access_token');
-
-            if (!access_token) {
-                const token = await this.RequestAccessToken({
-                    grant_type: "client_credentials",
-                    client_id: this.configService.get<string>('CLIENT_ID')!,
-                    client_secret: this.configService.get<string>('CLIENT_SECRET')!,
-                    scope: "CustomerJourneyService MasterDataService MemberService TransactionService"
-                })
-                if (!access_token) return;
-                await this.cache.set('access_token', access_token);
-                access_token = token.access_token
-            }
+           const access_token = await this.getAccessToken();
             
             // const retryFunc = async (list: typeof listPaymentFailed) =>
             //     await Promise.all(list.map(hdr => this.Coupon(
@@ -86,7 +71,7 @@ export class LoyaltyService {
         this.logger.verbose('End retry payment failed loyalty !!!');
     }
 
-    async RequestAccessToken(data: OAuthTokenLoyaltyRequest): Promise<OAuthTokenLoyaltyResponse> {
+    async RequestAccessTokenAPI(data: OAuthTokenLoyaltyRequest): Promise<OAuthTokenLoyaltyResponse> {
         return await this._axiosInstance.post(
             "/connect/token",
 
@@ -97,7 +82,7 @@ export class LoyaltyService {
         }).then(({ data }) => data)
     }
 
-    async GetDetailLoyalty(access_token: string): Promise<GetDetailLoyaltyResponse> {
+    async GetDetailLoyaltyAPI(access_token: string): Promise<GetDetailLoyaltyResponse> {
         return await this._axiosInstance.get(
             "/api/transaction-service/reward-360/GetMemberProfile", {
             headers: {
@@ -107,7 +92,7 @@ export class LoyaltyService {
         ).then(({ data }) => data)
     }
 
-    async Coupon(data: LoyaltyCouponDto, access_token: string): Promise<LoyaltyCouponResponse> {
+    async CouponAPI(data: LoyaltyCouponDto, access_token: string): Promise<LoyaltyCouponResponse> {
         return await this._axiosInstance.post(
             "/api/customer-journey-service/activitydata/InputDataAsync",
             data, {
@@ -117,7 +102,7 @@ export class LoyaltyService {
         }).then(({ data }) => data)
     }
 
-    async ReturnRequest(data: ReturnBalanceDto, access_token: string): Promise<ReturnBalanceResponse> {
+    async ReturnRequestAPI(data: ReturnBalanceDto, access_token: string): Promise<ReturnBalanceResponse> {
         return await this._axiosInstance.post(
             "/api/customer-journey-service/activitydata/InputReturnDataAsync",
             data, {
@@ -125,5 +110,25 @@ export class LoyaltyService {
                 'Authorization': `Bearer ${access_token}`
             }
         }).then(({ data }) => data)
+    }
+
+    async getAccessToken(): Promise<string | null> {
+        let access_token: string | null;   
+        
+        access_token = await this.cache.get('access_token');
+        if (access_token) return access_token;
+        
+        const getToken = await this.RequestAccessTokenAPI({
+            grant_type: "client_credentials",
+            client_id: this.configService.get<string>('CLIENT_ID')!,
+            client_secret: this.configService.get<string>('CLIENT_SECRET')!,
+            scope: "CustomerJourneyService MasterDataService MemberService TransactionService"
+        })
+        if (!getToken.access_token) return null;
+
+        access_token = getToken.access_token;
+        await this.cache.set('access_token', access_token);
+
+        return access_token;
     }
 }

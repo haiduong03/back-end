@@ -26,6 +26,8 @@ import { DataSourceOptions } from 'typeorm';
                 pool: {
                     max: 100,
                 },
+                connectionTimeout: 15000,
+                requestTimeout: 30000
             }),
         }),
     ],
