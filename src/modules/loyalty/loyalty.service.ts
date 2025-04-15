@@ -33,9 +33,9 @@ export class LoyaltyService {
     }
 
     // @Cron(CronExpression.EVERY_HOUR)
-    @Cron('*/10 * * * * *')
+    @Cron('*/20 * * * * *')
     async handleRetryLoyalty() {
-        this.logger.verbose('Start retry payment failed loyalty...');
+        this.logger.verbose('Start retry payment loyalty...');
 
         try {
             // const startDate = dayjs().subtract(1, 'hour').toDate();
@@ -44,37 +44,46 @@ export class LoyaltyService {
             const startDate = dayjs().set('dates', 9).set('hour', 8).set('minute', 0).set('second', 0).toDate();
             const endDate = dayjs().set('dates', 9).set('hour', 9).set('minute', 0).set('second', 0).toDate();
 
-            const listPaymentFailed = await this.HdrRepository.getAllPaymentFailedByTime({ startDate, endDate });
-            // if (!listPaymentFailed.length) return;
+            const [listPaymentFailed, access_token] = await Promise.all([
+                await this.HdrRepository.getAllPaymentFailedByTime({ startDate, endDate }),
+                await this.getAccessToken(),
+            ])
+            if (!listPaymentFailed.length || !access_token) return;
 
-           const access_token = await this.getAccessToken();
-            
-            // const retryFunc = async (list: typeof listPaymentFailed) =>
-            //     await Promise.all(list.map(hdr => this.Coupon(
-            //         JSON.parse(hdr.payment.Request_Data),
-            //         access_token
-            //     )));
+            const retryFunc = async (list: typeof listPaymentFailed) =>
+                await Promise.all(list.map(hdr => this.CouponAPI(
+                    JSON.parse(hdr.payment.Request_Data),
+                    access_token
+                )));
 
-            // if (listPaymentFailed.length > 500) {
-            //     while (listPaymentFailed.length) {
-            //         const chunk = listPaymentFailed.splice(0, 500);
-            //         await retryFunc(chunk)
-            //     }
-            // } else {
-            //     await retryFunc(listPaymentFailed)
-            // }
+            if (listPaymentFailed.length > 500) {
+                while (listPaymentFailed.length) {
+                    const chunk = listPaymentFailed.splice(0, 500);
+                    await retryFunc(chunk)
+                }
+            } else {
+                await retryFunc(listPaymentFailed)
+            }
         } catch (error) {
-            const dataLog = error instanceof AxiosError ? error.response?.data : error
-            writeLog(dataLog, 'handleRetryLoyalty');
+            let data: any = error;
+
+            if (error instanceof AxiosError) {
+                const dataLog = error.response?.data;
+                const request = JSON.parse((error.toJSON() as any)?.['config']?.['data'])
+
+                data = { dataLog, request };
+            }
+            
+            writeLog(data, 'handleRetryLoyalty');
+
         }
 
-        this.logger.verbose('End retry payment failed loyalty !!!');
+        this.logger.verbose('End retry payment loyalty !!!');
     }
 
     async RequestAccessTokenAPI(data: OAuthTokenLoyaltyRequest): Promise<OAuthTokenLoyaltyResponse> {
         return await this._axiosInstance.post(
             "/connect/token",
-
             data, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -113,11 +122,11 @@ export class LoyaltyService {
     }
 
     async getAccessToken(): Promise<string | null> {
-        let access_token: string | null;   
-        
+        let access_token: string | null;
+
         access_token = await this.cache.get('access_token');
         if (access_token) return access_token;
-        
+
         const getToken = await this.RequestAccessTokenAPI({
             grant_type: "client_credentials",
             client_id: this.configService.get<string>('CLIENT_ID')!,
@@ -127,7 +136,11 @@ export class LoyaltyService {
         if (!getToken.access_token) return null;
 
         access_token = getToken.access_token;
-        await this.cache.set('access_token', access_token);
+        await this.cache.set(
+            'access_token',
+            access_token,
+            +this.configService.get('REDIS_TTL_TOKEN_LOYALTY')!
+        );
 
         return access_token;
     }

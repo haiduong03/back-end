@@ -7,7 +7,10 @@ import { MssqlDatabaseModule } from "./modules/mssql/mssql.module";
 import { RedisCacheModule } from "./modules/redis-cache/redis-cache.module";
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     LoyaltyModule,
     MssqlDatabaseModule,
     RedisCacheModule,

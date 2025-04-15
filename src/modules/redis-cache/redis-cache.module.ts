@@ -1,27 +1,25 @@
-import { createKeyv, Keyv } from "@keyv/redis";
+import KeyvRedis, { createClient, Keyv } from "@keyv/redis";
 import { CacheModule } from "@nestjs/cache-manager";
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { CacheableMemory } from "cacheable";
 import { RedisCacheService } from "./redis-cache.service";
-
+@Global()
 @Module({
     imports: [
-        CacheModule.register({
+        CacheModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => {
-                const host = "" + configService.get('REDIS_HOST');
+            useFactory: async (configService: ConfigService) => {
+                const host = configService.get('REDIS_HOST');
                 const port = +configService.get('REDIS_PORT');
                 const ttl = +configService.get('REDIS_TTL');
 
-                return {
-                    stores: [
-                        createKeyv(`redis://${host}:${port}`),
-                    ],
-                    ttl,
-                }
-            }
+                const namespace = { namespace: 'familymart' }
+                const keyvRedis = new KeyvRedis(`redis://${host}:${port}`, namespace)
+                const keyv = new Keyv(keyvRedis, namespace)
+
+                return { stores: [keyv], ttl }
+            },
         }),
     ],
     exports: [RedisCacheService],

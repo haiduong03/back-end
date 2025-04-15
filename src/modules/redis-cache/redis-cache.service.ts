@@ -1,6 +1,7 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Inject, Injectable } from "@nestjs/common";
+import { Cache } from "cache-manager";
+
 
 @Injectable()
 export class RedisCacheService {
@@ -9,7 +10,7 @@ export class RedisCacheService {
         private readonly cacheManager: Cache,
     ) { }
 
-    async get<T>(key: string): Promise<string | null> {
+    async get(key: string): Promise<string | null> {
         return await this.cacheManager.get(key);
     }
 

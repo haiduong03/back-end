@@ -9,7 +9,7 @@ import { DataSourceOptions } from 'typeorm';
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService): DataSourceOptions => ({
+            useFactory: async (configService: ConfigService): Promise<DataSourceOptions> => ({
                 type: 'mssql',
                 host: configService.get<string>('HOST'),
                 username: configService.get<string>('USER_NAME'),
@@ -26,8 +26,8 @@ import { DataSourceOptions } from 'typeorm';
                 pool: {
                     max: 100,
                 },
-                connectionTimeout: 15000,
-                requestTimeout: 30000
+                connectionTimeout: 30000,
+                requestTimeout: 60000
             }),
         }),
     ],
