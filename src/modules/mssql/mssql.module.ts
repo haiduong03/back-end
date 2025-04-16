@@ -27,7 +27,10 @@ import { DataSourceOptions } from 'typeorm';
                     max: 100,
                 },
                 connectionTimeout: 30000,
-                requestTimeout: 60000
+                requestTimeout: 60000,
+                options: {
+                    instanceName: configService.get<string>('INSTANCE') 
+                }
             }),
         }),
     ],
