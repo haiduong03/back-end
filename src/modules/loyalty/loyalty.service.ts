@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron } from "@nestjs/schedule";
+import { Cron, CronExpression } from "@nestjs/schedule";
 import { HdrRepository } from "@repository/dsmart90/hdr.repo";
 import axios, { AxiosError, AxiosInstance } from "axios";
 import dayjs from "dayjs";
@@ -32,17 +32,17 @@ export class LoyaltyService {
         })
     }
 
-    // @Cron(CronExpression.EVERY_HOUR)
-    @Cron('*/20 * * * * *')
+    @Cron(CronExpression.EVERY_HOUR)
+    // @Cron('*/20 * * * * *')
     async handleRetryLoyalty() {
         this.logger.verbose('Start retry payment loyalty...');
 
         try {
-            // const startDate = dayjs().subtract(1, 'hour').toDate();
-            // const endDate = dayjs().toDate();
+            const startDate = dayjs().subtract(1, 'hour').toDate();
+            const endDate = dayjs().toDate();
 
-            const startDate = dayjs().set('dates', 9).set('hour', 8).set('minute', 0).set('second', 0).toDate();
-            const endDate = dayjs().set('dates', 9).set('hour', 9).set('minute', 0).set('second', 0).toDate();
+            // const startDate = dayjs().set('dates', 9).set('hour', 8).set('minute', 0).set('second', 0).toDate();
+            // const endDate = dayjs().set('dates', 9).set('hour', 9).set('minute', 0).set('second', 0).toDate();
 
             const [listPaymentFailed, access_token] = await Promise.all([
                 await this.HdrRepository.getAllPaymentFailedByTime({ startDate, endDate }),
