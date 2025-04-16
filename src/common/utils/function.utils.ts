@@ -1,10 +1,13 @@
 import dayjs from "dayjs";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const writeLog = (data: any, fileName: string, typeFile = '.log') => {
     try {
-        const folderDir = `logs/${dayjs().format("YYYY-MM-DD")}`;
+        const folderDir = `${process.env.LOG_PATH}/${dayjs().format("YYYY-MM-DD")}`;
         if (!existsSync(folderDir)) {
             mkdirSync(folderDir);
         }

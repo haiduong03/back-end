@@ -22,12 +22,12 @@ export class LoyaltyService {
         private readonly cache: RedisCacheService
     ) {
         this._axiosInstance = axios.create({
-            baseURL: this.configService.get<string>('TLS_v2_UAT')!,
+            baseURL: this.configService.get('TLS')!,
             maxBodyLength: Infinity,
             maxContentLength: Infinity,
             headers: {
-                '__tenant': this.configService.get<string>('TENANT')!,
-                '__merchant': this.configService.get<string>('MERCHANT')!,
+                '__tenant': this.configService.get('TENANT')!,
+                '__merchant': this.configService.get('MERCHANT')!,
             }
         })
     }
@@ -59,10 +59,10 @@ export class LoyaltyService {
             if (listPaymentFailed.length > 500) {
                 while (listPaymentFailed.length) {
                     const chunk = listPaymentFailed.splice(0, 500);
-                    await retryFunc(chunk)
+                    await retryFunc(chunk);
                 }
             } else {
-                await retryFunc(listPaymentFailed)
+                await retryFunc(listPaymentFailed);
             }
         } catch (error) {
             let data: any = error;
@@ -75,7 +75,7 @@ export class LoyaltyService {
             }
             
             writeLog(data, 'handleRetryLoyalty');
-
+            this.logger.error(error);
         }
 
         this.logger.verbose('End retry payment loyalty !!!');
@@ -129,8 +129,8 @@ export class LoyaltyService {
 
         const getToken = await this.RequestAccessTokenAPI({
             grant_type: "client_credentials",
-            client_id: this.configService.get<string>('CLIENT_ID')!,
-            client_secret: this.configService.get<string>('CLIENT_SECRET')!,
+            client_id: this.configService.get('CLIENT_ID')!,
+            client_secret: this.configService.get('CLIENT_SECRET')!,
             scope: "CustomerJourneyService MasterDataService MemberService TransactionService"
         })
         if (!getToken.access_token) return null;

@@ -1,5 +1,5 @@
 # Use official NestJS base image
-FROM node:23-slim
+FROM node:23-alpine
 
 # Set work directory
 WORKDIR /app
