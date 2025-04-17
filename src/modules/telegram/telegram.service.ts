@@ -9,21 +9,11 @@ export class TelegramService {
     constructor(
         private readonly configService: ConfigService
     ) {
-        this.telegramBot = new TelegramBot(
-            this.configService.get('TELEGRAM_BOT_TOKEN')!, {
-            polling: true
-        });
-
-        this.telegramBot.on("message", this.onMessage);
-        this.telegramBot.on("gr", this.onMessage);
-        this.sendMessage({ text: "Hello" })
+        const token = this.configService.get('TELEGRAM_BOT_TOKEN')!
+        this.telegramBot = new TelegramBot(token, { polling: true, });
     }
 
-    onMessage(messages: Message) {
-        console.log({ messages });
-    }
-
-    async sendMessage({ chatId = "-4615808631", text, options }: TSendMessageParams) {
+    async sendMessage({ chatId, text, options }: TSendMessageParams) {
         return await this.telegramBot.sendMessage(chatId, text, options);
     }
 }

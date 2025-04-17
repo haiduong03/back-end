@@ -4,12 +4,14 @@ import { HdrRepository } from "@repository/dsmart90/hdr.repo";
 import { LoyaltyService } from './loyalty.service';
 import { RedisCacheModule } from "../redis-cache/redis-cache.module";
 import { ScheduleModule } from "@nestjs/schedule";
+import { TelegramModule } from "../telegram/telegram.module";
 
 @Module({
   imports: [
     ConfigModule,
     ScheduleModule,
     RedisCacheModule,
+    TelegramModule,
   ],
   controllers: [],
   providers: [

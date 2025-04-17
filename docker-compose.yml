@@ -8,13 +8,9 @@ services:
       - '3000:3000'
     depends_on:
       - redis
-    environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
     env_file:
       - .env
     volumes:
-      - .:/app
       - ${LOG_PATH}:/app/logs
     command: npm run start
 
@@ -32,6 +28,3 @@ services:
       - --save 900 1
       - --save 300 10
       - --save 60 10000
-
-volumes:
-  redis-data:
