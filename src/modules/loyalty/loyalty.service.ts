@@ -32,7 +32,8 @@ export class LoyaltyService {
         })
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    // @Cron(CronExpression.EVERY_HOUR)
+    @Cron('*/10 * * * * *')
     async handleRetryLoyalty() {
         this.logger.verbose('Start retry payment loyalty...');
 
@@ -40,11 +41,23 @@ export class LoyaltyService {
             const startDate = dayjs().subtract(1, 'hour').toDate();
             const endDate = dayjs().toDate();
 
+            console.log(1);
             const [listPaymentFailed, access_token] = await Promise.all([
                 await this.HdrRepository.getAllPaymentFailedByTime({ startDate, endDate }),
                 await this.getAccessToken(),
             ])
-            if (!listPaymentFailed.length || !access_token) return;
+            console.log(123);
+            
+            this.logger.debug({
+                listPaymentFailed: listPaymentFailed?.[0],
+                access_token
+            });
+
+            if (!listPaymentFailed.length || !access_token) {
+                if (!access_token) this.logger.fatal('Can not get access token');
+                if (!listPaymentFailed.length) this.logger.fatal('List payment failed empty');
+                return;
+            }
 
             const retryFunc = async (list: typeof listPaymentFailed) =>
                 await Promise.all(list.map(hdr => this.CouponAPI(
@@ -71,7 +84,6 @@ export class LoyaltyService {
             }
             
             writeLog(data, 'handleRetryLoyalty');
-            this.logger.error(error);
         }
 
         this.logger.verbose('End retry payment loyalty !!!');
@@ -129,6 +141,7 @@ export class LoyaltyService {
             client_secret: this.configService.get('CLIENT_SECRET')!,
             scope: "CustomerJourneyService MasterDataService MemberService TransactionService"
         })
+        console.log({ getToken });
         if (!getToken.access_token) return null;
 
         access_token = getToken.access_token;

@@ -26,8 +26,8 @@ import { DataSourceOptions } from 'typeorm';
                 pool: {
                     max: 100,
                 },
-                connectionTimeout: 30000,
-                requestTimeout: 60000,
+                connectionTimeout: 1800000, //ms
+                requestTimeout: 1800000, //ms
                 options: {
                     instanceName: configService.get<string>('INSTANCE') 
                 }

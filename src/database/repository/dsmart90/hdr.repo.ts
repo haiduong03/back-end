@@ -1,6 +1,6 @@
 import { STrHdr } from "@entities/dsmart90/STrHdr.entity";
 import { Injectable } from "@nestjs/common";
-import { TGetAllPaymentFailedByTime } from "src/modules/loyalty/interface/dsmart90Query.interface";
+import { TGetAllPaymentFailedByTime } from "src/modules/loyalty/types/dsmart90Query.interface";
 import { Between, DataSource, IsNull, Raw, Repository } from "typeorm";
 
 @Injectable()

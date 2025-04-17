@@ -5,6 +5,7 @@ import { HttpExceptionFilter } from "./common/filters/httpException.filter";
 import { LoyaltyModule } from "./modules/loyalty/loyalty.module";
 import { MssqlDatabaseModule } from "./modules/mssql/mssql.module";
 import { RedisCacheModule } from "./modules/redis-cache/redis-cache.module";
+import { TelegramModule } from './modules/telegram/telegram.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -15,6 +16,7 @@ import { RedisCacheModule } from "./modules/redis-cache/redis-cache.module";
     MssqlDatabaseModule,
     RedisCacheModule,
     ScheduleModule.forRoot(),
+    TelegramModule,
   ],
   providers: [
     HttpExceptionFilter,
