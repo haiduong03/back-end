@@ -90,6 +90,9 @@ export class LoyaltyService {
             const payload: TSendMessageParams = {
                 chatId: this.configService.get('TELEGRAM_TOPIC_ID')!,
                 text: `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`,
+                options: {
+                    message_thread_id: this.configService.get('TELEGRAM_TOPIC_ID')!,
+                }
             }
 
             while (filter.length) {
