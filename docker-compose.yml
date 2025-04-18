@@ -11,6 +11,7 @@ services:
     env_file:
       - .env
     volumes:
+      - .:/app
       - ${LOG_PATH}:/app/logs
     command: npm run start
 
@@ -28,3 +29,6 @@ services:
       - --save 900 1
       - --save 300 10
       - --save 60 10000
+
+volumes:
+  redis-data:

@@ -1,6 +1,8 @@
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable } from "@nestjs/common";
+import { OnEvent } from "@nestjs/event-emitter";
 import { Cache } from "cache-manager";
+import { EVENT_EMIT } from "../telegram/enum/event-emit.enum";
 
 
 @Injectable()
@@ -14,6 +16,7 @@ export class RedisCacheService {
         return await this.cacheManager.get(key);
     }
 
+    @OnEvent(EVENT_EMIT.SET_CACHE)
     async set<T>(key: string, value: T, ttl?: number) {
         await this.cacheManager.set(key, value, ttl);
     }

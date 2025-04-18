@@ -1,17 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { HdrRepository } from "@repository/dsmart90/hdr.repo";
 import axios, { AxiosError, AxiosInstance } from "axios";
 import dayjs from "dayjs";
 import { writeLog } from "src/common/utils/function.utils";
 import { RedisCacheService } from "../redis-cache/redis-cache.service";
+import { EVENT_EMIT } from "../telegram/enum/event-emit.enum";
 import { LoyaltyCouponDto, LoyaltyCouponResponse } from "./dto/coupon.dto";
 import { GetDetailLoyaltyResponse } from './dto/getInfo.dto';
 import { ReturnBalanceDto, ReturnBalanceResponse } from "./dto/return.dto";
 import { OAuthTokenLoyaltyRequest, OAuthTokenLoyaltyResponse, } from "./dto/token.dto";
-import { TelegramService } from "../telegram/telegram.service";
-import { TSendMessageParams } from "../telegram/types/telegram.types";
 
 @Injectable()
 export class LoyaltyService {
@@ -22,7 +22,7 @@ export class LoyaltyService {
         private readonly logger: Logger,
         private readonly configService: ConfigService,
         private readonly cache: RedisCacheService,
-        private readonly telegramService: TelegramService,
+        private readonly evenEmit: EventEmitter2,
     ) {
         this._axiosInstance = axios.create({
             baseURL: this.configService.get('TLS')!,
@@ -84,23 +84,15 @@ export class LoyaltyService {
             }
 
             const filter = listPaymentFailed.filter(hdr => hdr?.payment?.Request_Data);
-
             const countAll = listPaymentFailed.length;
             const countMissRequest = countAll - filter.length;
-            const payload: TSendMessageParams = {
-                chatId: this.configService.get('TELEGRAM_TOPIC_ID')!,
-                text: `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`,
-                options: {
-                    message_thread_id: this.configService.get('TELEGRAM_TOPIC_ID')!,
-                }
-            }
+            const payload = `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`;
 
             while (filter.length) {
                 const chunk = filter.splice(0, 500);
                 await retryFunc(chunk);
             }
-            await this.telegramService.sendMessage(payload);
-
+            this.evenEmit.emit(EVENT_EMIT.MESSAGE_LOYALTY_RETRY, payload);
         } catch (error) {
             handleErr(error);
         }
@@ -163,7 +155,8 @@ export class LoyaltyService {
         if (!getToken.access_token) return null;
 
         access_token = getToken.access_token;
-        await this.cache.set(
+        this.evenEmit.emit(
+            EVENT_EMIT.SET_CACHE,
             'access_token',
             access_token,
             +this.configService.get('REDIS_TTL_TOKEN_LOYALTY')!
