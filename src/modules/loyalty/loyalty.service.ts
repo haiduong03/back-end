@@ -33,14 +33,16 @@ export class LoyaltyService {
                 '__merchant': this.configService.get('MERCHANT')!,
             }
         })
+
+        this._axiosInstance.interceptors.response.use((response) => response, this.retryUnauthorized);
     }
 
     @Cron(CronExpression.EVERY_HOUR)
     async handleRetryLoyalty() {
         this.logger.verbose('Start retry payment loyalty...');
 
-        const startDate = dayjs().subtract(1, 'hour').toDate();
-        const endDate = dayjs().toDate();
+        const endDate = dayjs().utc().toDate();
+        const startDate = dayjs(endDate).subtract(1, 'hour').toDate();
 
         const handleErr = (error: any) => {
             let data: any = error;
@@ -63,7 +65,7 @@ export class LoyaltyService {
             ])
             if (!listPaymentFailed.length || !access_token) return;
 
-            let success = 0, err = 0;
+            let success = 0, err = 0, payload = "";
 
             const retryFunc = async (list: typeof listPaymentFailed) => {
                 const callingAPI = await Promise.allSettled(
@@ -86,12 +88,13 @@ export class LoyaltyService {
             const filter = listPaymentFailed.filter(hdr => hdr?.payment?.Request_Data);
             const countAll = listPaymentFailed.length;
             const countMissRequest = countAll - filter.length;
-            const payload = `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`;
-
+            
             while (filter.length) {
                 const chunk = filter.splice(0, 500);
                 await retryFunc(chunk);
             }
+            
+            payload += `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`;
             this.evenEmit.emit(EVENT_EMIT.MESSAGE_LOYALTY_RETRY, payload);
         } catch (error) {
             handleErr(error);
@@ -163,5 +166,20 @@ export class LoyaltyService {
         );
 
         return access_token;
+    }
+
+    async retryUnauthorized(error: AxiosError) {
+        try {
+            if (error.response?.status === 401) {
+                const access_token = await this.getAccessToken();
+                
+                if (!access_token) throw error;
+                
+                return this._axiosInstance.request(error.request)
+            }
+        } catch (error) {
+            this.logger.error(error);
+            throw error
+        }
     }
 }

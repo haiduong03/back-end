@@ -1,9 +1,8 @@
-version: '3.9+'
-
+version: 3.9+'
 services:
   app:
-    build: .
-    container_name: familymart-backend
+    image: famimavn/loyalty-retry:latest
+    container_name: familymart
     ports:
       - '3000:3000'
     depends_on:
@@ -11,24 +10,24 @@ services:
     env_file:
       - .env
     volumes:
-      - .:/app
-      - ${LOG_PATH}:/app/logs
-    command: npm run start
-
+      - /home/itsoftware/familymart/backend/$${LOG_PATH}$$:/app/logs
+    command: npm run start:prod
   redis:
     image: redis:latest
     container_name: redis
+    env_file:
+      - .env
     ports:
       - '6379:6379'
     volumes:
-      - redis-data:/data
-    command:
-      - redis-server
-      - --appendonly yes
-      - --appendfsync everysec
-      - --save 900 1
-      - --save 300 10
-      - --save 60 10000
-
-volumes:
-  redis-data:
+      - /home/itsoftware/familymart/backend/redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+      --bind 0.0.0.0
+      --protected-mode no
+      --user ${REDIS_USER} on >${REDIS_PASSWORD} allcommands allkeys ~*
+# --requirepass ${REDIS_PASSWORD}

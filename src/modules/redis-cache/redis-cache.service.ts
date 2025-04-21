@@ -10,7 +10,9 @@ export class RedisCacheService {
     constructor(
         @Inject(CACHE_MANAGER)
         private readonly cacheManager: Cache,
-    ) { }
+    ) {
+        this.set('connected', 'connected', 50000);
+     }
 
     async get(key: string): Promise<string | null> {
         return await this.cacheManager.get(key);

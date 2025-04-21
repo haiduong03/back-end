@@ -12,9 +12,13 @@ import { RedisCacheService } from "./redis-cache.service";
             useFactory: async (configService: ConfigService) => {
                 const host = configService.get('REDIS_HOST');
                 const port = +configService.get('REDIS_PORT');
+                const user = configService.get('REDIS_USER');
+                const password = configService.get('REDIS_PASSWORD');
 
                 const namespace = { namespace: 'familymart' }
-                const keyvRedis = new KeyvRedis(`redis://${host}:${port}`, namespace)
+                const url = `redis://:${password}@${host}:${port}`
+
+                const keyvRedis = new KeyvRedis(url, namespace)
                 const keyv = new Keyv(keyvRedis, namespace)
 
                 return { stores: [keyv] };
