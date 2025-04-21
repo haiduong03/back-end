@@ -44,6 +44,8 @@ export class LoyaltyService {
         const endDate = dayjs().utc().toDate();
         const startDate = dayjs(endDate).subtract(1, 'hour').toDate();
 
+        console.log({ startDate, endDate });
+
         const handleErr = (error: any) => {
             let data: any = error;
 
@@ -63,7 +65,12 @@ export class LoyaltyService {
                 await this.HdrRepository.getAllPaymentFailedByTime({ startDate, endDate }),
                 await this.getAccessToken(),
             ])
-            if (!listPaymentFailed.length || !access_token) return;
+            if (!listPaymentFailed.length || !access_token) {
+                if (!listPaymentFailed.length) this.logger.verbose('No data payment failed');
+                if (!access_token) this.logger.verbose('No access token');
+                return;
+            };
+            writeLog(listPaymentFailed, `getAllPaymentFailedByTime`);
 
             let success = 0, err = 0, payload = "";
 
