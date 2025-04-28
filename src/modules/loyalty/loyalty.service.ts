@@ -41,8 +41,8 @@ export class LoyaltyService {
     async handleRetryLoyalty() {
         this.logger.verbose('Start retry payment loyalty...');
 
-        const endDate = dayjs().format('YYYY-MM-DD HH:mm');
-        const startDate = dayjs(endDate).subtract(5, 'hour').format('YYYY-MM-DD HH:mm');;
+        const endDate = dayjs().utc().toDate()
+        const startDate = dayjs(endDate).subtract(1, 'hour').toDate();
 
         try {
             const [listPaymentFailed, access_token] = await Promise.all([

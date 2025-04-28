@@ -7,4 +7,4 @@ export type TGetAllPaymentFailedByTime = {
     payment: Pick<STrPayment, 'Request_Data'>;
 } 
 
-export type TGetAllPaymentFailedByTimeInput = { startDate: string, endDate: string }
+export type TGetAllPaymentFailedByTimeInput = { startDate: Date, endDate: Date }
