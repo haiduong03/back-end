@@ -1,31 +1,27 @@
-import { STrHdr } from "@entities/dsmart90/STrHdr.entity";
-import { Injectable } from "@nestjs/common";
-import { TGetAllPaymentFailedByTime } from "src/modules/loyalty/types/dsmart90Query.interface";
-import { Between, DataSource, IsNull, Raw, Repository } from "typeorm";
+import { STrHdr } from '@entities/dsmart90/STrHdr.entity';
+import { Injectable } from '@nestjs/common';
+import { TGetAllPaymentFailedByTime, TGetAllPaymentFailedByTimeInput } from 'src/modules/loyalty/types/dsmart90Query.interface';
+import { DataSource, Repository } from 'typeorm';
 
 @Injectable()
 export class HdrRepository extends Repository<STrHdr> {
     constructor(dataSource: DataSource) {
         super(STrHdr, dataSource.createEntityManager());
     }
-    
-    async getAllPaymentFailedByTime({ startDate, endDate }: { startDate: Date, endDate: Date }) {
-        return (await this.find({
-            select: {
-                payment: {
-                    Request_Data: true
-                },
-            },
-            where: {
-                EfTran_Date: Between(startDate, endDate),
-                payment: {
-                    Pmt_ID: 2,
-                    Response_Data: IsNull(),
-                }
-            },
-            relations: {
-                payment: true,
-            },
-        })) as unknown as TGetAllPaymentFailedByTime[]
+
+    async getAllPaymentFailedByTime({ startDate, endDate }: TGetAllPaymentFailedByTimeInput) {
+        return await this.createQueryBuilder('Hdr')
+            .select([
+                'Hdr.Trans_No',
+                'Payment.Request_Data',
+            ])
+            .leftJoin('Hdr.payment', 'Payment')
+            .leftJoin('Hdr.sale', 'Sale')
+            .andWhere('Payment.Pmt_IDX = :payment', { payment: 2 })
+            .andWhere('Payment.Response_Data IS NULL')
+            .andWhere('Sale.EfTran_Date >= :startDate', { startDate })
+            .andWhere('Sale.EfTran_Date <= :endDate', { endDate })
+            .groupBy()
+            .getMany() as TGetAllPaymentFailedByTime[]
     }
 }

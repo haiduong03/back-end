@@ -16,7 +16,8 @@ import { DataSourceOptions } from 'typeorm';
                 password: configService.get<string>('PASSWORD'),
                 database: configService.get<string>('DATABASE'),
                 synchronize: configService.get<string>('SYNCHRONIZE') === 'true',
-                logging: configService.get<string>('LOGGING') === 'true',
+                // logging: configService.get<string>('LOGGING') === 'true',
+                logging: true,
                 extra: {
                     encrypt: false,
                     trustServerCertificate: true,

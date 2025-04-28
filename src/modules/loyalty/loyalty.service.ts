@@ -5,7 +5,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { HdrRepository } from "@repository/dsmart90/hdr.repo";
 import axios, { AxiosError, AxiosInstance } from "axios";
 import dayjs from "dayjs";
-import { writeLog } from "src/common/utils/function.utils";
+import { handleErrAPILoyalty, writeLog } from "src/common/utils/function.utils";
 import { RedisCacheService } from "../redis-cache/redis-cache.service";
 import { EVENT_EMIT } from "../telegram/enum/event-emit.enum";
 import { LoyaltyCouponDto, LoyaltyCouponResponse } from "./dto/coupon.dto";
@@ -41,24 +41,8 @@ export class LoyaltyService {
     async handleRetryLoyalty() {
         this.logger.verbose('Start retry payment loyalty...');
 
-        const endDate = dayjs().utc().toDate();
-        const startDate = dayjs(endDate).subtract(1, 'hour').toDate();
-
-        console.log({ startDate, endDate });
-
-        const handleErr = (error: any) => {
-            let data: any = error;
-
-            if (error instanceof AxiosError) {
-                const dataLog = error.response?.data;
-                const request = JSON.parse((error.toJSON() as any)?.['config']?.['data'])
-
-                data = { dataLog, request };
-            }
-
-            writeLog(data, 'handleRetryLoyalty');
-            this.logger.error(error);
-        }
+        const endDate = dayjs().format('YYYY-MM-DD HH:mm');
+        const startDate = dayjs(endDate).subtract(5, 'hour').format('YYYY-MM-DD HH:mm');;
 
         try {
             const [listPaymentFailed, access_token] = await Promise.all([
@@ -87,8 +71,8 @@ export class LoyaltyService {
 
                 for (const item of callingAPI) {
                     item.status === "fulfilled" ?
-                        (success += 1) :
-                        (err += 1, handleErr(item.reason))
+                        (success += 1, console.log(item.status)) :
+                        (err += 1, handleErrAPILoyalty(item.reason))
                 }
             }
 
@@ -104,7 +88,7 @@ export class LoyaltyService {
             payload += `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`;
             this.evenEmit.emit(EVENT_EMIT.MESSAGE_LOYALTY_RETRY, payload);
         } catch (error) {
-            handleErr(error);
+            handleErrAPILoyalty(error);
         }
 
         this.logger.verbose('End retry payment loyalty !!!');
@@ -185,7 +169,7 @@ export class LoyaltyService {
                 return this._axiosInstance.request(error.request)
             }
         } catch (error) {
-            this.logger.error(error);
+            console.log(error);
             throw error
         }
     }

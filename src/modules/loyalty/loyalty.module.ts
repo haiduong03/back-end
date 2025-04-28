@@ -1,5 +1,4 @@
 import { Logger, Module } from '@nestjs/common';
-import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
 import { HdrRepository } from "@repository/dsmart90/hdr.repo";
 import { RedisCacheModule } from "../redis-cache/redis-cache.module";
