@@ -21,7 +21,9 @@ export class HdrRepository extends Repository<STrHdr> {
             .andWhere('Payment.Response_Data IS NULL')
             .andWhere('Sale.EfTran_Date >= :startDate', { startDate })
             .andWhere('Sale.EfTran_Date <= :endDate', { endDate })
-            .groupBy()
+            .addGroupBy('Hdr.Trans_No')
+            .addGroupBy('Payment.Request_Data')
+            .addGroupBy('Payment.Pmt_IDX')
             .getMany() as TGetAllPaymentFailedByTime[]
     }
 }

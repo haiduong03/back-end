@@ -29,5 +29,5 @@ services:
       --save 300 10
       --bind 0.0.0.0
       --protected-mode no
-      --user ${REDIS_USER} on >${REDIS_PASSWORD} allcommands allkeys ~*
-# --requirepass ${REDIS_PASSWORD}
+      --requirepass ${REDIS_PASSWORD}
+    # --user ${REDIS_USER} on >${REDIS_PASSWORD} allcommands allkeys ~*

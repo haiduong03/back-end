@@ -12,7 +12,7 @@ export const writeLog = (data: any, fileName: string, typeFile = '.log') => {
         if (!existsSync(folderDir)) {
             mkdirSync(folderDir);
         }
-        const pathLogFile = join(folderDir, `${fileName}_${dayjs().unix()}${typeFile}`);
+        const pathLogFile = join(folderDir, `${fileName}_${dayjs().format('HH-mm')}${typeFile}`);
         writeFileSync(pathLogFile, JSON.stringify(data, null, 2));
     } catch (error) {
         console.log(error);

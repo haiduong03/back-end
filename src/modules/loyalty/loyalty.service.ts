@@ -12,6 +12,7 @@ import { LoyaltyCouponDto, LoyaltyCouponResponse } from "./dto/coupon.dto";
 import { GetDetailLoyaltyResponse } from './dto/getInfo.dto';
 import { ReturnBalanceDto, ReturnBalanceResponse } from "./dto/return.dto";
 import { OAuthTokenLoyaltyRequest, OAuthTokenLoyaltyResponse, } from "./dto/token.dto";
+import { TGetAllPaymentFailedByTime } from "./types/dsmart90Query.interface";
 
 @Injectable()
 export class LoyaltyService {
@@ -41,57 +42,67 @@ export class LoyaltyService {
     async handleRetryLoyalty() {
         this.logger.verbose('Start retry payment loyalty...');
 
-        const endDate = dayjs().utc().toDate()
-        const startDate = dayjs(endDate).subtract(1, 'hour').toDate();
+        const endDate = dayjs().add(7, 'hour').toISOString();
+        const startDate = dayjs(endDate).subtract(1, 'hour').toISOString();
+
+        this.logger.fatal({ endDate, startDate });
 
         try {
             const [listPaymentFailed, access_token] = await Promise.all([
                 await this.HdrRepository.getAllPaymentFailedByTime({ startDate, endDate }),
                 await this.getAccessToken(),
             ])
+
             if (!listPaymentFailed.length || !access_token) {
                 if (!listPaymentFailed.length) this.logger.verbose('No data payment failed');
                 if (!access_token) this.logger.verbose('No access token');
                 return;
             };
             writeLog(listPaymentFailed, `getAllPaymentFailedByTime`);
+             new Error();
 
-            let success = 0, err = 0, payload = "";
+            if (this.configService.get('NODE_ENV') === "production") {
+                let success = 0, err = 0;
+                const filter = listPaymentFailed.filter(hdr => hdr?.payment?.Request_Data);
+                const countAll = listPaymentFailed.length;
+                const countMissRequest = countAll - filter.length;
 
-            const retryFunc = async (list: typeof listPaymentFailed) => {
-                const callingAPI = await Promise.allSettled(
-                    list.map(
-                        hdr => hdr?.payment?.Request_Data &&
-                            this.CouponAPI(
-                                JSON.parse(hdr.payment.Request_Data),
-                                access_token
-                            )
-                    ));
+                while (filter.length) {
+                    const chunk = filter.splice(0, 500);
+                    const retry = await this.retryFunc(chunk, access_token);
 
-
-                for (const item of callingAPI) {
-                    item.status === "fulfilled" ?
-                        (success += 1, console.log(item.status)) :
-                        (err += 1, handleErrAPILoyalty(item.reason))
+                    success += retry.success;
+                    err += retry.err;
                 }
-            }
 
-            const filter = listPaymentFailed.filter(hdr => hdr?.payment?.Request_Data);
-            const countAll = listPaymentFailed.length;
-            const countMissRequest = countAll - filter.length;
-            
-            while (filter.length) {
-                const chunk = filter.splice(0, 500);
-                await retryFunc(chunk);
+                const payload = `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`;
+                this.evenEmit.emit(EVENT_EMIT.MESSAGE_LOYALTY_RETRY, payload);
             }
-            
-            payload += `♻️Retry Payment Loyalty♻️\nSuccess: ${success}\nFailed: ${err}\nTotal: ${countAll}\nNot have request data: ${countMissRequest}`;
-            this.evenEmit.emit(EVENT_EMIT.MESSAGE_LOYALTY_RETRY, payload);
         } catch (error) {
             handleErrAPILoyalty(error);
         }
 
         this.logger.verbose('End retry payment loyalty !!!');
+    }
+
+    async retryFunc(list: TGetAllPaymentFailedByTime[], access_token: string, success = 0, err = 0) {
+        const callingAPI = await Promise.allSettled(
+            list.map(
+                hdr => hdr?.payment?.Request_Data &&
+                    this.CouponAPI(
+                        JSON.parse(hdr.payment.Request_Data),
+                        access_token
+                    )
+            ));
+
+
+        for (const item of callingAPI) {
+            item.status === "fulfilled" ?
+                (success += 1) :
+                (err += 1, handleErrAPILoyalty(item.reason))
+        }
+        
+        return { success, err }
     }
 
     async RequestAccessTokenAPI(data: OAuthTokenLoyaltyRequest): Promise<OAuthTokenLoyaltyResponse> {
@@ -163,9 +174,9 @@ export class LoyaltyService {
         try {
             if (error.response?.status === 401) {
                 const access_token = await this.getAccessToken();
-                
+
                 if (!access_token) throw error;
-                
+
                 return this._axiosInstance.request(error.request)
             }
         } catch (error) {

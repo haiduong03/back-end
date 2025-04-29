@@ -44,8 +44,7 @@ export class TelegramService {
         await this.telegramBotLoyalty.sendMessage(
             this.configService.get('TELEGRAM_CHAT_ID_LOYALTY')!,
             text, {
-            message_thread_id: this.configService.get('TELEGRAM_TOPIC_ID_LOYALTY')!,
-        }
-        );
+            message_thread_id: this.configService.get('TELEGRAM_TOPIC_ID_LOYALTY'),
+        });
     }
 }
