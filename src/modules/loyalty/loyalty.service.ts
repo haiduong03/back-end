@@ -59,7 +59,6 @@ export class LoyaltyService {
                 return;
             };
             writeLog(listPaymentFailed, `getAllPaymentFailedByTime`);
-             new Error();
 
             if (this.configService.get('NODE_ENV') === "production") {
                 let success = 0, err = 0;
