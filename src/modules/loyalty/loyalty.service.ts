@@ -35,7 +35,14 @@ export class LoyaltyService {
             }
         })
 
-        this._axiosInstance.interceptors.response.use((response) => response, this.retryUnauthorized);
+        this._axiosInstance
+            .interceptors
+            .response
+            .use(
+                (response) =>
+                    response,
+                this.retryUnauthorized.bind(this)
+            );
     }
 
     @Cron(CronExpression.EVERY_HOUR)
@@ -100,7 +107,7 @@ export class LoyaltyService {
                 (success += 1) :
                 (err += 1, handleErrAPILoyalty(item.reason))
         }
-        
+
         return { success, err }
     }
 

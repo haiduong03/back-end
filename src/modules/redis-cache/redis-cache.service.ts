@@ -3,6 +3,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { Cache } from "cache-manager";
 import { EVENT_EMIT } from "../telegram/enum/event-emit.enum";
+import { ConfigService } from "@nestjs/config";
 
 
 @Injectable()
@@ -10,8 +11,10 @@ export class RedisCacheService {
     constructor(
         @Inject(CACHE_MANAGER)
         private readonly cacheManager: Cache,
+        private readonly configService: ConfigService,
     ) {
-        this.set('connected', 'connected', 50000);
+        this.configService.get('NODE_ENV') === 'production' &&
+            this.set('connected', 'connected', 50000);
      }
 
     async get(key: string): Promise<string | null> {

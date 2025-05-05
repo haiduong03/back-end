@@ -24,6 +24,7 @@ export class HdrRepository extends Repository<STrHdr> {
             .addGroupBy('Hdr.Trans_No')
             .addGroupBy('Payment.Request_Data')
             .addGroupBy('Payment.Pmt_IDX')
+            .addGroupBy('Payment.Trans_No')
             .getMany() as TGetAllPaymentFailedByTime[]
     }
 }

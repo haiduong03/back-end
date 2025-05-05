@@ -19,18 +19,18 @@ export const writeLog = (data: any, fileName: string, typeFile = '.log') => {
     }
 }
 
-export const handleErrAPILoyalty = (error: any) => {
+export const handleErrAPILoyalty = (error: any, name = 'handleRetryLoyalty') => {
     let data: any = error;
 
-    if (error instanceof AxiosError) {
-        const dataLog = error.response?.data;
-        const request = JSON.parse((error.toJSON() as any)?.['config']?.['data'])
-        const status = error.response?.status;
-        const statusText = error.response?.statusText;
+    // if (error instanceof AxiosError) {
+    //     const dataLog = error.response?.data;
+    //     const request = JSON.parse((error.toJSON() as any)?.['config']?.['data'])
+    //     const status = error.response?.status;
+    //     const statusText = error.response?.statusText;
 
-        data = { status, statusText, dataLog, request };
-    }
+    //     data = { status, statusText, dataLog, request };
+    // }
 
-    writeLog(data, 'handleRetryLoyalty');
+    writeLog(data, name);
     console.log(error);
 }

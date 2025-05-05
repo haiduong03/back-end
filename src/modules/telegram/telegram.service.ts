@@ -30,10 +30,8 @@ export class TelegramService {
         // messages receive
         this.telegramBotLoyalty.on('message', this.onMassage);
 
-        this.telegramBotLoyalty.sendMessage(
-            '1421913123',
-            'connected',
-        )
+        this.configService.get('NODE_ENV') === 'production' &&
+            this.telegramBotLoyalty.sendMessage('1421913123', 'connected')
     }
 
     private onMassage = (msg: Message) => this.logger.log(msg);

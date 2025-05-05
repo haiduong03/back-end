@@ -6,7 +6,7 @@ export class STrPayment {
     @PrimaryColumn({ type: "int", default: 0 })
     Pmt_IDX: number;
 
-    @Column({ type: "varchar", length: 20, default: "" })
+    @PrimaryColumn({ type: "varchar", length: 20, default: "" })
     Trans_No: string;
 
     @Column({ type: "datetime", default: () => "'1900-01-01'" })
