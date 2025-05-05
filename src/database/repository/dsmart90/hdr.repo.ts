@@ -17,7 +17,7 @@ export class HdrRepository extends Repository<STrHdr> {
             ])
             .leftJoin('Hdr.payment', 'Payment')
             .leftJoin('Hdr.sale', 'Sale')
-            .andWhere('Payment.Pmt_IDX = :payment', { payment: 2 })
+            .andWhere('Payment.Pmt_ID = :payment', { payment: 2 })
             .andWhere('Payment.Response_Data IS NULL')
             .andWhere('Sale.EfTran_Date >= :startDate', { startDate })
             .andWhere('Sale.EfTran_Date <= :endDate', { endDate })
