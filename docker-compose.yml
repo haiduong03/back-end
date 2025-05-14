@@ -1,4 +1,5 @@
-version: 3.9+'
+version: '3.9+'
+
 services:
   app:
     image: famimavn/loyalty-retry:latest
@@ -9,9 +10,17 @@ services:
       - redis
     env_file:
       - .env
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    extra_hosts:
+      - "fds-auth.rox.vn:10.254.23.114"
+      - "fds-web.rox.vn:10.254.23.114"
+      - "fds-portal.rox.vn:10.254.23.114"
     volumes:
-      - /home/itsoftware/familymart/backend/$${LOG_PATH}$$:/app/logs
+      - /home/itsoftware/familymart/backend/${LOG_PATH}:/app/logs
     command: npm run start:prod
+
   redis:
     image: redis:latest
     container_name: redis
@@ -30,4 +39,3 @@ services:
       --bind 0.0.0.0
       --protected-mode no
       --requirepass ${REDIS_PASSWORD}
-    # --user ${REDIS_USER} on >${REDIS_PASSWORD} allcommands allkeys ~*
