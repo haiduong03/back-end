@@ -10,7 +10,9 @@ import { LoyaltyController } from "./loyalty.controller";
     ScheduleModule,
     RedisCacheModule,
   ],
-  controllers: [LoyaltyController],
+  controllers: [
+    LoyaltyController
+  ],
   providers: [
     LoyaltyService,
     HdrRepository,

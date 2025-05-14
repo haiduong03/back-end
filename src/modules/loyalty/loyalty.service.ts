@@ -39,13 +39,14 @@ export class LoyaltyService {
             .interceptors
             .response
             .use(
-                (response) =>
-                    response,
+                (response) => response,
                 this.retryUnauthorized.bind(this)
-            );
+        );
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_HOUR, {
+        disabled: process.env.NODE_ENV !== 'production',
+    })
     async handleRetryLoyalty() {
         this.logger.verbose('Start retry payment loyalty...');
 

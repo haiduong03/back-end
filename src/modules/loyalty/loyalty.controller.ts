@@ -5,9 +5,9 @@ import { LoyaltyService } from './loyalty.service';
 export class LoyaltyController {
   constructor(private readonly loyaltyService: LoyaltyService) { }
 
-  @Post()
-  async retry() {
-    this.loyaltyService.handleRetryLoyalty();
-    return "ok"
-  }
+  // @Post()
+  // async retry() {
+  //   this.loyaltyService.handleRetryLoyalty();
+  //   return "ok"
+  // }
 }

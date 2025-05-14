@@ -21,21 +21,20 @@ export class TelegramService {
                 url: "https://api.telegram.org",
             }
         }
-        // loyalty
-        this.telegramBotLoyalty = new TelegramBot(
-            this.configService.get('TELEGRAM_BOT_TOKEN_LOYALTY')!,
-            option
-        );
-
-        // messages receive
-        this.telegramBotLoyalty.on('message', this.onMassage);
-
-        this.configService.get('NODE_ENV') === 'production' &&
+        if (this.configService.get('NODE_ENV') === 'production') {
+            // loyalty
+            this.telegramBotLoyalty = new TelegramBot(
+                this.configService.get('TELEGRAM_BOT_TOKEN_LOYALTY')!,
+                option
+            );
+            // messages receive
+            this.telegramBotLoyalty.on('message', this.onMassage);
+            // check connected
             this.telegramBotLoyalty.sendMessage('1421913123', 'connected')
+        }
     }
 
     private onMassage = (msg: Message) => this.logger.log(msg);
-    private polingError = (err: any) => this.logger.error(err);
 
     @OnEvent(EVENT_EMIT.MESSAGE_LOYALTY_RETRY)
     async sendMessageLoyalty(text: string) {

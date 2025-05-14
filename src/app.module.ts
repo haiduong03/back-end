@@ -7,12 +7,14 @@ import { LoyaltyModule } from "./modules/loyalty/loyalty.module";
 import { MssqlDatabaseModule } from "./modules/mssql/mssql.module";
 import { RedisCacheModule } from "./modules/redis-cache/redis-cache.module";
 import { TelegramModule } from './modules/telegram/telegram.module';
+import { FdsModule } from "./modules/fds/fds.module";
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
+    FdsModule,
     LoyaltyModule,
     MssqlDatabaseModule,
     RedisCacheModule,

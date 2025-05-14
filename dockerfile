@@ -1,6 +1,19 @@
 # Use official NestJS base image
 FROM node:23-alpine
 
+# Install Chromium and dependencies
+RUN apk update && apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ttf-freefont \
+    bash \
+    curl \
+    dumb-init \
+    udev \
+    xvfb
+    
 # Set work directory
 WORKDIR /app
 
