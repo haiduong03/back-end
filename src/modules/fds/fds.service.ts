@@ -1,13 +1,12 @@
-import dayjs from 'dayjs';
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from "@nestjs/common";
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from "axios";
+import dayjs from 'dayjs';
 import { convert, HtmlToTextOptions } from 'html-to-text';
 import puppeteer, { Browser, HTTPResponse, Page, SupportedBrowser } from "puppeteer";
-import { ExportInventoryTransferDetail, InventoryTransfer, InventoryTransferDetailDto, ListTransportsInternalDto, LoginFdsDto, Stores } from "./dto/fds.dto";
-import { generateCSv, mapQueryUrl } from "src/common/utils/function.utils";
 import { ResponseList } from "src/common/type/common";
-import { Response } from "express";
+import { generateCSv, mapQueryUrl } from "src/common/utils/function.utils";
+import { ExportInventoryTransferDetail, InventoryTransfer, ListTransportsInternalDto, LoginFdsDto } from "./dto/fds.dto";
 @Injectable()
 export class FdsService {
     private readonly _axiosInstance: AxiosInstance;
@@ -23,7 +22,7 @@ export class FdsService {
                 Accept: "application/json, text/plain, */*",
                 'Content-Type': "application/json",
             },
-            timeout: 30000,
+            timeout: 60000,
         })
     }
 
