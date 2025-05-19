@@ -1,9 +1,13 @@
-import { HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
+import dayjs from 'dayjs';
+import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from "@nestjs/common";
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from "axios";
 import { convert, HtmlToTextOptions } from 'html-to-text';
 import puppeteer, { Browser, HTTPResponse, Page, SupportedBrowser } from "puppeteer";
-import { LoginFdsDto } from "./dto/fds.dto";
+import { ExportInventoryTransferDetail, InventoryTransfer, InventoryTransferDetailDto, ListTransportsInternalDto, LoginFdsDto, Stores } from "./dto/fds.dto";
+import { generateCSv, mapQueryUrl } from "src/common/utils/function.utils";
+import { ResponseList } from "src/common/type/common";
+import { Response } from "express";
 @Injectable()
 export class FdsService {
     private readonly _axiosInstance: AxiosInstance;
@@ -15,6 +19,11 @@ export class FdsService {
             baseURL: this.configService.get('FDS_URL')!,
             maxBodyLength: Infinity,
             maxContentLength: Infinity,
+            headers: {
+                Accept: "application/json, text/plain, */*",
+                'Content-Type': "application/json",
+            },
+            timeout: 30000,
         })
     }
 
@@ -24,9 +33,9 @@ export class FdsService {
             headless: true,
             defaultViewport: null,
             args: [
-                '--disable-dev-shm-usage', 
+                '--disable-dev-shm-usage',
                 '--disable-gpu',
-                '--disable-setuid-sandbox', 
+                '--disable-setuid-sandbox',
                 '--no-sandbox',
                 '--ignore-certificate-errors'
             ],
@@ -39,7 +48,7 @@ export class FdsService {
         page.on("request", (request) => request.continue());
 
         return new Promise<string>((resolve, reject) => {
-            const urlFds = this.configService.get('FDS_URL');
+            const urlFds = this.configService.get('FDS_URL_AUTH');
             const urlToken = urlFds + '/connect/token';
             const urlLogin = this.configService.get<string>('FDS_URL_LOGIN')!;
             const urlErr = 'Sai đăng nhập hoặc mật khẩu!'
@@ -100,13 +109,88 @@ export class FdsService {
         return { access_token: getToken };
     }
 
-    async listTransportsInternal(access_token: string) {
-        return await this._axiosInstance.get(
-            "/api/transport-service/transport/GetTransportList", {
+    async listTransportsInternal(access_token: string, body: ListTransportsInternalDto) {
+        const data = Object.assign(body);
+        delete data.access_token;
+        
+        const list = await this._axiosInstance.post(
+            "/inv/api/app/inventory-transfer/get-list",
+            data, {
             headers: {
                 'Authorization': `Bearer ${access_token}`
             }
+        }).then(({ data: { data } }) => data) as ResponseList<InventoryTransfer>
+
+        const result = {
+            items: await Promise.all(list.items.map((item) => this.getDetailInventoryTransfer(access_token, item.id))),
+            totalCount: list.totalCount
+        } 
+        return result;
+    }
+
+    async getStores(access_token: string, query = {
+        skipCount: 0,
+        maxResultCount: 1000,
+        filterType: "REPORT_FILTER_TYPE.GEOGRAPHICAL_REGION"
+    }) {
+        return await this._axiosInstance.get(
+            "/mdm/api/app/master-data/read/store-for-report?" + mapQueryUrl(query), {
+            headers: {
+                'Authorization': `Bearer ${access_token}`
+            }
+        }).then(({ data: { data } }) => data)
+    }
+  
+    async getCommonList(access_token: string, query = {
+        groupCodes: ["INVENTORY_TRANSFER_TYPE", "INVENTORY_TRANSFER_STATUS"],
+    }) {
+        return await this._axiosInstance.get(
+            "/mdm/api/app/master-data/read/common-lists?" + mapQueryUrl(query), {
+            headers: {
+                'Authorization': `Bearer ${access_token}`
+            }
+        }).then(({ data: { data } }) => data)
+    }
+
+    async getDetailInventoryTransfer(access_token: string, id: string) { 
+        return await this._axiosInstance.get(
+            `/inv/api/app/inventory-transfer/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${access_token}`
+            }
+        }).then(({ data: { data } }) => data) as InventoryTransfer
+    }
+
+    async exportListTransportsInternal(access_token: string, body: ListTransportsInternalDto) { 
+        try {
+            let total = 0, skipCount = 0;
+            let data: ExportInventoryTransferDetail[] = [];
+            do {
+                const list = await this.listTransportsInternal(access_token, { ...body, skipCount, maxResultCount: 1000 })
+                skipCount += 1000;
+                total = list.totalCount;
+                data.push(...list.items.flatMap((item) =>
+                    item.inventoryTransferDetails.map((detail) => ({
+                        creationTime: dayjs(item.creationTime).format("YYYY-MM-DD HH:mm"),
+                        code: item.code,
+                        productCode: detail.productCode,
+                        productBarcode: detail.productBarcode,
+                        productName: detail.productName,
+                        transferQuantity: detail.transferQuantity,
+                        productUnitName: detail.productUnitName,
+                    })))
+                )
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            } while (skipCount < total)
+            const file = generateCSv(data);
+
+            const stream = new StreamableFile(file, {
+                type: 'text/csv',
+                disposition: 'attachment; filename="report.csv"',
+            });
+            return stream;
+        } catch (error) { 
+            throw new HttpException("BAD_REQUEST", HttpStatus.BAD_REQUEST)
         }
-        ).then(({ data }) => data)
     }
 }

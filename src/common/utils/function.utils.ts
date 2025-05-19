@@ -1,8 +1,9 @@
 import dayjs from "dayjs";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
 import dotenv from "dotenv";
-import { AxiosError } from "axios";
+import { createWriteStream, existsSync, mkdirSync, writeFileSync } from "fs";
+import { join } from "path";
+import { TQueryPrams } from "../type/common";
+import { createObjectCsvStringifier } from "csv-writer";
 
 dotenv.config();
 
@@ -34,3 +35,48 @@ export const handleErrAPILoyalty = (error: any, name = 'handleRetryLoyalty') => 
     writeLog(data, name);
     console.log(error);
 }
+
+export const mapQueryUrl = (params: TQueryPrams) =>
+    Object.entries(params).map(([key, value]) =>
+        Array.isArray(value)
+            ? value.map((value) => `${key}=${value}`).join('&') :
+            `${key}=${value}`).join('&')
+
+// export const generateCSv = (data: any[], fileName: string) => {
+//     if (!data || data.length === 0) return new Error('No data to write to CSV');
+    
+//     const outputStream = createWriteStream(`${fileName}.csv`);
+//     const csvStringifier = createObjectCsvStringifier({
+//         header: Object.keys(data[0]).map((key) => ({ id: key, title: key })),
+//     });
+//     const header = csvStringifier.getHeaderString();
+//     outputStream.write(header);
+
+//     do {
+//         const chunk = data.splice(0, 1000);
+//         const csvString = csvStringifier.stringifyRecords(chunk);
+//         outputStream.write(csvString);
+//     } while (data.length > 0)
+    
+//     outputStream.end();
+// }
+
+export const generateCSv = (data: any[]): Buffer => {
+    if (!data || data.length === 0) throw new Error('No data to write to CSV');
+
+    const csvStringifier = createObjectCsvStringifier({
+        header: Object.keys(data[0]).map((key) => ({ id: key, title: key })),
+    });
+
+    const header = csvStringifier.getHeaderString();
+    const chunks = [header];
+
+    let remaining = [...data]; // Don't mutate original data
+    while (remaining.length) {
+        const chunk = remaining.splice(0, 1000);
+        const csvChunk = csvStringifier.stringifyRecords(chunk);
+        chunks.push(csvChunk);
+    }
+
+    return Buffer.from(chunks.join(''), 'utf8');
+  };

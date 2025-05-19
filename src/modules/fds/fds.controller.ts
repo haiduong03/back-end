@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Post } from "@nestjs/common";
-import { ApiOkResponse } from "@nestjs/swagger";
+import { Body, Controller, Post, Res } from "@nestjs/common";
+import { ApiOkResponse, ApiProduces } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
-import { LoginFdsDto, TokenFdsDto } from "./dto/fds.dto";
+import { PaginatedResponse } from "src/common/decorators/response-list.decorator";
+import { CommonListDto, InventoryTransfer, ListTransportsInternalDto, LoginFdsDto, Stores, TokenFdsDto } from "./dto/fds.dto";
 import { FdsService } from "./fds.service";
+import { Response } from "express";
 
 @Controller('fds')
 export class FdsController {
@@ -18,8 +20,27 @@ export class FdsController {
     }
 
 
-    @Get('list-transports-internal')
-    async listTransportsInternal() {
-        return await this.fdsService.listTransportsInternal('')
+    @Post('list-transports-internal')
+    @PaginatedResponse(InventoryTransfer)
+    async listTransportsInternal(@Body() body: ListTransportsInternalDto) {
+        return await this.fdsService.listTransportsInternal(body.access_token, { ...body });
+    }
+
+    @Post('stores')
+    @PaginatedResponse(Stores)
+    async getStores(@Body() body: TokenFdsDto) {
+        return await this.fdsService.getStores(body.access_token);
+    }
+
+    @Post('common-list')
+    @PaginatedResponse(CommonListDto)
+    async getCommonList(@Body() body: TokenFdsDto) {
+        return await this.fdsService.getCommonList(body.access_token);
+    }
+    
+    @Post('list-transports-internal/export')
+    @ApiOkResponse({ description: 'CSV file', schema: { type: 'string', format: 'binary' } })
+    async exportListTransportsInternal(@Body() body: ListTransportsInternalDto) {
+        return await this.fdsService.exportListTransportsInternal(body.access_token, { ...body });
     }
  }
